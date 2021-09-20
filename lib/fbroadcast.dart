@@ -110,7 +110,7 @@ class FBroadcast {
     }
 
     // if(callback != null){
-      _get(key)!.callback = callback!;
+      _get(key)!.callback = callback;
     // }
 
     if (value == null || _get(key)!.value == value) {
