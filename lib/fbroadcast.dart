@@ -108,7 +108,11 @@ class FBroadcast {
     if (persistence && !_get(key)!.persistence!) {
       _get(key)!.persistence = true;
     }
-    _get(key)!.callback = callback!;
+    
+    if(callback != null){
+      _get(key)!.callback = callback!;
+    }
+
     if (value == null || _get(key)!.value == value) {
       _get(key)!.notifyListeners();
     } else {
@@ -339,7 +343,7 @@ class FBroadcast {
       });
 //      print('size = ${_receiverCache.length}');
     }
-    remove?.dispose();
+    remove.dispose();
     _stickyMap!.remove(key);
   }
 
