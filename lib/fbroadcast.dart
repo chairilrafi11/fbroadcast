@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-export 'package:fbroadcast/stateful.dart';
-
 /// [FBroadcast] 帮助开发者在应用内建立一套高效的广播系统，注册到系统中的接收者，将能接收到任意位置发送的对应类型的消息。
 /// 同时，[FBroadcast] 还支持了粘性广播，这将帮助开发这轻松处理一些复杂的通讯场景。
 ///
@@ -14,8 +12,8 @@ class FBroadcast {
   static bool debug = false;
   static final Map<dynamic, FBroadcast> _broadcastMap = {};
   Map<String, _Notifier<dynamic>>? _map;
-  late Map<String, List<_Notifier>> _stickyMap;
-  late Map<Object, List<ResultCallback>> _receiverCache;
+  Map<String, List<_Notifier>>? _stickyMap;
+  Map<Object, List<ResultCallback>>? _receiverCache;
   String _type = "extra";
   dynamic _key;
 
@@ -62,8 +60,7 @@ class FBroadcast {
   ///
   /// This function allows the receiver to get the data in the message
   static T? value<T>(String? key) {
-    // ignore: unnecessary_null_comparison
-    if (_textIsEmpty(key!) || instance()._map == null) return null;
+    if (_textIsEmpty(key!)! || instance()._map == null) return null;
     var value = instance()._map![key]?.value;
     if (value == null) return null;
     if (!(value is T)) {
@@ -74,9 +71,8 @@ class FBroadcast {
   }
 
   _Notifier? _get(String? key) {
-    // ignore: unnecessary_null_comparison
     if (_map == null) return null;
-    if (_textIsEmpty(key!)) throw Exception("The key can't be null or empty!");
+    if (_textIsEmpty(key!)!) throw Exception("The key can't be null or empty!");
     if (!_map!.containsKey(key)) {
       _map![key] = _Notifier(null);
     }
@@ -84,10 +80,10 @@ class FBroadcast {
   }
 
   List? _getReceivers(Object? context) {
-    if (_receiverCache[context] == null) {
-      _receiverCache[context!] = [];
+    if (_receiverCache![context] == null) {
+      _receiverCache![context!] = [];
     }
-    return _receiverCache[context];
+    return _receiverCache![context];
   }
 
   /// 广播一条 [key] 类型的消息。
@@ -105,18 +101,14 @@ class FBroadcast {
   /// [value] - The data carried in the message. Can be any type or null.
   /// [callback] - Able to receive the message returned by the receiver
   /// [persistence] - Whether or not to persist message types. Persistent messages can be retrieved at any time by [FBroadcast. Value] for the current message packet. By default, unpersisted message types are removed without a receiver, while persisted message types are not. Developers can use the [clear] function to remove persistent message types.
-  void broadcast(String? key,
-      {dynamic value, ValueCallback? callback, bool? persistence = false}) {
-    // ignore: unnecessary_null_comparison
+  void broadcast(String key,
+      {dynamic value, ValueCallback? callback, bool persistence = false}) {
     if (_map == null) return;
-    if (_textIsEmpty(key!)) return;
-    if (persistence! && (!_get(key)!.persistence)) {
+    if (_textIsEmpty(key)!) return;
+    if (persistence && !_get(key)!.persistence!) {
       _get(key)!.persistence = true;
     }
-
-    if(callback != null){
-      _get(key)!.callback = callback;
-    }
+    _get(key)!.callback = callback!;
     if (value == null || _get(key)!.value == value) {
       _get(key)!.notifyListeners();
     } else {
@@ -144,19 +136,18 @@ class FBroadcast {
   /// [persistence] - Whether or not to persist message types. Persistent messages can be retrieved at any time by [FBroadcast. Value] for the current message packet. By default, unpersisted message types are removed without a receiver, while persisted message types are not. Developers can use the [clear] function to remove persistent message types.
   void stickyBroadcast(String key,
       {dynamic value, ValueCallback? callback, bool persistence = false}) {
-    // ignore: unnecessary_null_comparison
     if (_map == null) return;
-    if (_textIsEmpty(key)) return;
-    if (persistence && !_get(key)!.persistence) {
+    if (_textIsEmpty(key)!) return;
+    if (persistence && !_get(key)!.persistence!) {
       _get(key)!.persistence = true;
     }
     if (_map!.containsKey(key) && _map![key]!.hasListeners) {
       broadcast(key, value: value, callback: callback);
     } else {
-      if (_stickyMap[key] == null) {
-        _stickyMap[key] = [];
+      if (_stickyMap![key] == null) {
+        _stickyMap![key] = [];
       }
-      _stickyMap[key]!.add(_Notifier(value)..callback = callback!);
+      _stickyMap![key]!.add(_Notifier(value)..callback = callback!);
     }
   }
 
@@ -178,40 +169,39 @@ class FBroadcast {
   /// [context] - context. Not null, [receiver] will be registered in the environment.
   /// [more] - Make it easy to register multiple recipients at once
   FBroadcast register(
-    String? key,
+    String key,
     ResultCallback? receiver, {
     Object? context,
     Map<String, ResultCallback>? more,
   }) {
-    // ignore: unnecessary_null_comparison
     if (_map == null) return this;
-    if (!_textIsEmpty(key!) && receiver != null) {
+    if (!_textIsEmpty(key)! && receiver != null) {
       _get(key)!.addListener(receiver);
       if (context != null && !_getReceivers(context)!.contains(receiver)) {
-        _receiverCache[context]!.add(receiver);
+        _receiverCache![context]!.add(receiver);
       }
-      if (_stickyMap[key] != null) {
-        _stickyMap[key]!.forEach((element) {
+      if (_stickyMap![key] != null) {
+        _stickyMap![key]!.forEach((element) {
           _Notifier notifier = element;
 //          _stickyMap.remove(key);
           broadcast(key, value: notifier.value, callback: notifier.callback);
         });
-        _stickyMap.remove(key);
+        _stickyMap!.remove(key);
       }
     }
     if (more?.isNotEmpty ?? false) {
       more!.forEach((key, value) {
         _get(key)!.addListener(value);
         if (context != null && !_getReceivers(context)!.contains(value)) {
-          _receiverCache[context]!.add(value);
+          _receiverCache![context]!.add(value);
         }
-        if (_stickyMap[key] != null) {
-          _stickyMap[key]!.forEach((element) {
+        if (_stickyMap![key] != null) {
+          _stickyMap![key]!.forEach((element) {
             _Notifier notifier = element;
 //          _stickyMap.remove(key);
             broadcast(key, value: notifier.value, callback: notifier.callback);
           });
-          _stickyMap.remove(key);
+          _stickyMap!.remove(key);
         }
       });
     }
@@ -229,11 +219,10 @@ class FBroadcast {
   /// [receiver] - receiver
   /// [key]-message type
   /// [context] - context.
-  void remove(ResultCallback ?receiver, {String? key, Object? context}) {
-    // ignore: unnecessary_null_comparison
+  void remove(ResultCallback? receiver, {String? key, Object? context}) {
     if (_map == null) return;
     if (receiver == null) return;
-    if (!_textIsEmpty(key!)) {
+    if (!_textIsEmpty(key!)!) {
       _get(key)!.removeListener(receiver);
     } else {
       _map!.forEach((k, value) {
@@ -244,16 +233,16 @@ class FBroadcast {
     if (context != null) {
       _getReceivers(context)!.remove(receiver);
       if (_getReceivers(context)!.isEmpty) {
-        _receiverCache.remove(context);
+        _receiverCache!.remove(context);
       }
     } else {
       List<Object> needRemove = [];
-      _receiverCache.forEach((k, value) {
+      _receiverCache!.forEach((k, value) {
         value.remove(receiver);
         if (value.isEmpty) needRemove.add(k);
       });
       needRemove.forEach((k) {
-        _receiverCache.remove(k);
+        _receiverCache!.remove(k);
       });
     }
   }
@@ -276,7 +265,6 @@ class FBroadcast {
   }
 
   void _unregister(Object? context) {
-    // ignore: unnecessary_null_comparison
     if (_map == null) return;
     if (context != null) {
       for (ResultCallback listener in _getReceivers(context)!) {
@@ -286,7 +274,7 @@ class FBroadcast {
       }
       _cleanMap();
       _getReceivers(context)!.clear();
-      _receiverCache.remove(context);
+      _receiverCache!.remove(context);
     }
   }
 
@@ -298,6 +286,7 @@ class FBroadcast {
       for (ResultCallback listener in _getReceivers(context)!) {
         for (_Notifier notify in notifys) {
           await Future.delayed(Duration(milliseconds: 0));
+          // ignore: unnecessary_null_comparison
           if (notify._listeners != null) {
             notify.removeListener(listener);
           }
@@ -305,7 +294,7 @@ class FBroadcast {
       }
       _cleanMap();
       _getReceivers(context)!.clear();
-      _receiverCache.remove(context);
+      _receiverCache!.remove(context);
     }
     return true;
   }
@@ -314,11 +303,10 @@ class FBroadcast {
   ///
   /// Removes a [Notifier] that does not have a receiver and is not persistent
   void _cleanMap() {
-    // ignore: unnecessary_null_comparison
     if (_map == null) return;
     List<String> needRemove = [];
     _map!.forEach((key, value) {
-      if (!value.hasListeners && !(value.persistence)) {
+      if (!value.hasListeners && !(value.persistence ?? false)) {
         needRemove.add(key);
       }
     });
@@ -335,24 +323,24 @@ class FBroadcast {
   void clear(String? key) {
     if (_map == null) return;
     _Notifier remove = _map!.remove(key)!;
-    if (remove.hasListeners) {
-      remove.listeners.forEach((receiver) {
-        _receiverCache.forEach((key, value) {
+    if (remove?.hasListeners ?? false) {
+      remove.listeners?.forEach((receiver) {
+        _receiverCache!.forEach((key, value) {
           value.remove(receiver);
         });
       });
       List<Object> needRemove = [];
-      _receiverCache.forEach((k, value) {
+      _receiverCache!.forEach((k, value) {
         if (value.isEmpty) needRemove.add(k);
       });
       needRemove.forEach((k) {
 //        print('needRemove = $k');
-        _receiverCache.remove(k);
+        _receiverCache!.remove(k);
       });
 //      print('size = ${_receiverCache.length}');
     }
-    remove.dispose();
-    _stickyMap.remove(key);
+    remove?.dispose();
+    _stickyMap!.remove(key);
   }
 
   /// 会移除当前广播系统实例中的所有的数据。
@@ -387,8 +375,8 @@ class FBroadcast {
       });
       int total2 = 0;
       Map reciverInfos2 = {};
-      fBroadcast._stickyMap.forEach((key, value) {
-        int count = value.length;
+      fBroadcast._stickyMap!.forEach((key, value) {
+        int count = value.length ?? 0;
         total2 += count;
         reciverInfos2[key] = {
           "count": count,
@@ -412,7 +400,7 @@ class FBroadcast {
 }
 
 /// --------------------------------------------------------------------------------
-bool _textIsEmpty(String? text) {
+bool? _textIsEmpty(String? text) {
   return text == null || text.length == 0;
 }
 
@@ -420,7 +408,7 @@ typedef ValueCallback<T> = void Function(T value);
 typedef ResultCallback<T> = void Function(T value, ValueCallback callback);
 
 class _Notifier<T> {
-  late bool persistence;
+  bool? persistence;
   ValueCallback? callback;
 
   T get value => _value;
@@ -452,8 +440,8 @@ class _Notifier<T> {
     return true;
   }
 
-  ObserverList<ResultCallback> get listeners {
-    return _listeners!;
+  ObserverList<ResultCallback>? get listeners {
+    return _listeners;
   }
 
   bool get hasListeners {
@@ -498,8 +486,7 @@ _fdebugPrint(String msg, {String tag = "FBroadcast: "}) {
   if (FBroadcast.debug) {
     var dateTime = DateTime.now();
     String r =
-        // ignore: unnecessary_brace_in_string_interps
-        "[$dateTime(${dateTime.millisecondsSinceEpoch})] ${tag} $msg";
+        "[$dateTime(${dateTime.millisecondsSinceEpoch})] ${tag ?? ''} $msg";
     if (r.length < 800) {
       print(r);
     } else {
