@@ -113,7 +113,10 @@ class FBroadcast {
     if (persistence! && (!_get(key)!.persistence)) {
       _get(key)!.persistence = true;
     }
-    _get(key)!.callback = callback!;
+
+    if(callback != null){
+      _get(key)!.callback = callback;
+    }
     if (value == null || _get(key)!.value == value) {
       _get(key)!.notifyListeners();
     } else {
@@ -315,7 +318,7 @@ class FBroadcast {
     if (_map == null) return;
     List<String> needRemove = [];
     _map!.forEach((key, value) {
-      if (!value.hasListeners && !(value.persistence ?? false)) {
+      if (!value.hasListeners && !(value.persistence)) {
         needRemove.add(key);
       }
     });
@@ -348,7 +351,7 @@ class FBroadcast {
       });
 //      print('size = ${_receiverCache.length}');
     }
-    remove?.dispose();
+    remove.dispose();
     _stickyMap.remove(key);
   }
 
@@ -385,7 +388,7 @@ class FBroadcast {
       int total2 = 0;
       Map reciverInfos2 = {};
       fBroadcast._stickyMap.forEach((key, value) {
-        int count = value.length ?? 0;
+        int count = value.length;
         total2 += count;
         reciverInfos2[key] = {
           "count": count,
@@ -409,7 +412,7 @@ class FBroadcast {
 }
 
 /// --------------------------------------------------------------------------------
-bool _textIsEmpty(String text) {
+bool _textIsEmpty(String? text) {
   return text == null || text.length == 0;
 }
 
@@ -417,7 +420,7 @@ typedef ValueCallback<T> = void Function(T value);
 typedef ResultCallback<T> = void Function(T value, ValueCallback callback);
 
 class _Notifier<T> {
-  bool persistence;
+  late bool persistence;
   ValueCallback? callback;
 
   T get value => _value;
@@ -495,7 +498,8 @@ _fdebugPrint(String msg, {String tag = "FBroadcast: "}) {
   if (FBroadcast.debug) {
     var dateTime = DateTime.now();
     String r =
-        "[$dateTime(${dateTime.millisecondsSinceEpoch})] ${tag ?? ''} $msg";
+        // ignore: unnecessary_brace_in_string_interps
+        "[$dateTime(${dateTime.millisecondsSinceEpoch})] ${tag} $msg";
     if (r.length < 800) {
       print(r);
     } else {
