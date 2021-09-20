@@ -6,13 +6,13 @@ typedef StatefulBuilder = Widget Function(
     BuildContext context, StateSetter setState, Map data);
 
 class Stateful extends StatefulWidget {
-  final StatefulCallback initState;
-  final ValueCallback didUpdateWidget;
-  final ValueCallback dispose;
-  final StatefulBuilder builder;
+  final StatefulCallback? initState;
+  final ValueCallback? didUpdateWidget;
+  final ValueCallback? dispose;
+  final StatefulBuilder? builder;
 
   Stateful({
-    Key key,
+    Key? key,
     this.initState,
     this.didUpdateWidget,
     this.dispose,
@@ -42,7 +42,7 @@ class _StatefulState extends State<Stateful> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.builder(context, setState, data);
+    return widget.builder!(context, setState, data);
   }
 
   @override
