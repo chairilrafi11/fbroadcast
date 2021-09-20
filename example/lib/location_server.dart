@@ -16,7 +16,7 @@ class LocationServer {
       var loc = await location();
 
       /// return message
-      callback(loc);
+      callback!(loc);
     });
   }
 

@@ -108,10 +108,10 @@ class FBroadcast {
     if (persistence && !_get(key)!.persistence!) {
       _get(key)!.persistence = true;
     }
-    
-    if(callback != null){
+
+    // if(callback != null){
       _get(key)!.callback = callback!;
-    }
+    // }
 
     if (value == null || _get(key)!.value == value) {
       _get(key)!.notifyListeners();
@@ -408,8 +408,8 @@ bool? _textIsEmpty(String? text) {
   return text == null || text.length == 0;
 }
 
-typedef ValueCallback<T> = void Function(T value);
-typedef ResultCallback<T> = void Function(T value, ValueCallback callback);
+typedef ValueCallback<T> = void Function(T? value);
+typedef ResultCallback<T> = void Function(T? value, ValueCallback? callback);
 
 class _Notifier<T> {
   bool? persistence;
